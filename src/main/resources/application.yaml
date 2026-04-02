@@ -2,3 +2,51 @@ spring:
   application:
     name: lovable-clone
     description: this is application
+
+  datasource:
+    url: jdbc:postgresql://localhost:9010/pgvector-test?options=-c%20timezone=Asia/Kolkata
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  ai:
+    openai:
+      api-key: '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'
+      base-url: https://openrouter.ai/api
+      chat:
+        options:
+          model: x-ai/grok-code-fast-1
+          temperature: 0.0
+          max-tokens: 150
+
+jwt:
+  secret-key: jhsfd45646jhhsdu8554gygfvdasg46544454
+
+stripe:
+  api:
+    secret: \${STRIPE_API_SECRET:sk_test_placeholder}
+  webhook:
+    secret: \${STRIPE_WEBHOOK_SECRET:whsec_placeholder}
+
+client.url: http://localhost:8080
+
+
+logging:
+  level:
+    org.springframework.ai:
+      chat.client: DEBUG
+
+minio:
+  url: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin123
+  project-bucket: projects
