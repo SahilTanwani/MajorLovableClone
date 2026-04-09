@@ -20,13 +20,13 @@ spring:
 
   ai:
     openai:
-      api-key: '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'
+      api-key: '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'
       base-url: https://openrouter.ai/api
       chat:
         options:
-          model: x-ai/grok-code-fast-1
+          model: openai/gpt-oss-120b:free
           temperature: 0.0
-          max-tokens: 150
+          max-tokens: 400
 
 jwt:
   secret-key: jhsfd45646jhhsdu8554gygfvdasg46544454

@@ -47,11 +47,69 @@ public class AiGenerationServiceImpl implements AiGenerationService {
     private static final Pattern FILE_TAG_PATTERN = Pattern.compile("<file path=\"([^\"]+)\">(.*?)</file>", Pattern.DOTALL);
 
 
+//    @Override
+//    @PreAuthorize("@security.canEditProject(#projectId)")
+//    public Flux<StreamResponse> streamResponse(String userMessage, Long projectId) {
+//
+////        usageService.checkDailyTokensUsage();
+//
+//        Long userId = authUtil.getCurrentUserId();
+//        ChatSession chatSession = createChatSessionIfNotExists(projectId, userId);
+//
+//        Map<String, Object> advisorParams = Map.of(
+//                "userId", userId,
+//                "projectId", projectId
+//        );
+//
+//        StringBuilder fullResponseBuffer = new StringBuilder();
+//        CodeGenerationTools codeGenerationTools = new CodeGenerationTools(projectFileService, projectId);
+//
+//        AtomicReference<Long> startTime = new AtomicReference<>(System.currentTimeMillis());
+//        AtomicReference<Long> endTime = new AtomicReference<>(0L);
+//        AtomicReference<Usage> usageRef = new AtomicReference<>();
+//
+//        return chatClient.prompt()
+//                .system(PromptUtils.CODE_GENERATION_SYSTEM_PROMPT)
+//                .user(userMessage)
+//                .tools(codeGenerationTools)
+//                .advisors(advisorSpec -> {
+//                            advisorSpec.params(advisorParams);
+//                            advisorSpec.advisors(fileTreeContextAdvisor);
+//                        }
+//                )
+//                .stream()
+//                .chatResponse()
+//                .doOnNext(response -> {
+//                    String content = response.getResult().getOutput().getText();
+//
+//                    if(content != null && !content.isEmpty() && endTime.get() == 0) { // first non-empty chunk received
+//                        endTime.set(System.currentTimeMillis());
+//                    }
+//
+//                    if(response.getMetadata().getUsage() != null) {
+//                        usageRef.set(response.getMetadata().getUsage());
+//                    }
+//                    fullResponseBuffer.append(content);
+//                })
+//                .doOnComplete(() -> {
+//                    Schedulers.boundedElastic().schedule(() -> {
+////                        parseAndSaveFiles(fullResponseBuffer.toString(), projectId);
+//
+//                        long duration = (endTime.get() - startTime.get()) /  1000;
+//                        finalizeChats(userMessage, chatSession, fullResponseBuffer.toString(), duration, usageRef.get());
+//                    });
+//                })
+//                .doOnError(error -> log.error("Error during streaming for projectId: {}", projectId))
+//                .map(response -> {
+//                    String text = response.getResult().getOutput().getText();
+//                    return new StreamResponse(text != null ? text : "");
+//                });
+//    }
     @Override
     @PreAuthorize("@security.canEditProject(#projectId)")
     public Flux<StreamResponse> streamResponse(String userMessage, Long projectId) {
 
-//        usageService.checkDailyTokensUsage();
+    //        usageService.checkDailyTokensUsage();
 
         Long userId = authUtil.getCurrentUserId();
         ChatSession chatSession = createChatSessionIfNotExists(projectId, userId);
@@ -67,6 +125,10 @@ public class AiGenerationServiceImpl implements AiGenerationService {
         AtomicReference<Long> startTime = new AtomicReference<>(System.currentTimeMillis());
         AtomicReference<Long> endTime = new AtomicReference<>(0L);
         AtomicReference<Usage> usageRef = new AtomicReference<>();
+
+        // 1. Capture the security context from the main Spring Web thread
+        org.springframework.security.core.context.SecurityContext securityContext =
+                org.springframework.security.core.context.SecurityContextHolder.getContext();
 
         return chatClient.prompt()
                 .system(PromptUtils.CODE_GENERATION_SYSTEM_PROMPT)
@@ -89,22 +151,31 @@ public class AiGenerationServiceImpl implements AiGenerationService {
                     if(response.getMetadata().getUsage() != null) {
                         usageRef.set(response.getMetadata().getUsage());
                     }
+
                     fullResponseBuffer.append(content);
                 })
                 .doOnComplete(() -> {
                     Schedulers.boundedElastic().schedule(() -> {
-//                        parseAndSaveFiles(fullResponseBuffer.toString(), projectId);
+                        // 2. Set the context on the background thread before executing secured methods
+                        org.springframework.security.core.context.SecurityContextHolder.setContext(securityContext);
 
-                        long duration = (endTime.get() - startTime.get()) /  1000;
-                        finalizeChats(userMessage, chatSession, fullResponseBuffer.toString(), duration, usageRef.get());
+                        try {
+                            long duration = (endTime.get() - startTime.get()) /  1000;
+                            finalizeChats(userMessage, chatSession, fullResponseBuffer.toString(), duration, usageRef.get());
+                        } finally {
+                            // 3. Always clean up the context to prevent memory leaks in thread pools
+                            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+                        }
                     });
                 })
-                .doOnError(error -> log.error("Error during streaming for projectId: {}", projectId))
+                .doOnError(error -> log.error("Error during streaming for projectId: {}", projectId, error))
                 .map(response -> {
                     String text = response.getResult().getOutput().getText();
                     return new StreamResponse(text != null ? text : "");
                 });
     }
+
+
 
 
 
