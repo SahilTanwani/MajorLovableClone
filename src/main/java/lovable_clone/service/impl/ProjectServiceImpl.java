@@ -84,7 +84,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @GetMapping
-    @PreAuthorize("security.canViewProject(#projectId)")
+    @PreAuthorize("@security.canViewProject(#projectId)")
     public ProjectResponse getUserProjectById(Long projectId) {
         Long userId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(projectId,userId);
