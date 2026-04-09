@@ -38,4 +38,7 @@ public class SecurityExpressions {
         long userId = authUtil.getCurrentUserId();
         return hasPermission(projectId, ProjectPermission.VIEW_MEMBERS);
     }
+    public boolean canManageMembers(Long projectId) {
+        return hasPermission(projectId, ProjectPermission.MANAGE_MEMBERS);
+    }
 }
