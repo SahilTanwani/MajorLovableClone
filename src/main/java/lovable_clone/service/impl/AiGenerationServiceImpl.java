@@ -43,6 +43,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
     private final UserRepository userRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatEventRepository chatEventRepository;
+    private final UsageLogRepository usageLogRepository;
 
     private static final Pattern FILE_TAG_PATTERN = Pattern.compile("<file path=\"([^\"]+)\">(.*?)</file>", Pattern.DOTALL);
 
@@ -109,7 +110,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
     @PreAuthorize("@security.canEditProject(#projectId)")
     public Flux<StreamResponse> streamResponse(String userMessage, Long projectId) {
 
-    //        usageService.checkDailyTokensUsage();
+        usageService.checkDailyTokensUsage();
 
         Long userId = authUtil.getCurrentUserId();
         ChatSession chatSession = createChatSessionIfNotExists(projectId, userId);
@@ -161,7 +162,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
 
                         try {
                             long duration = (endTime.get() - startTime.get()) /  1000;
-                            finalizeChats(userMessage, chatSession, fullResponseBuffer.toString(), duration, usageRef.get());
+                            finalizeChats(userMessage, chatSession, fullResponseBuffer.toString(), duration, usageRef.get(),userId);
                         } finally {
                             // 3. Always clean up the context to prevent memory leaks in thread pools
                             org.springframework.security.core.context.SecurityContextHolder.clearContext();
@@ -179,21 +180,66 @@ public class AiGenerationServiceImpl implements AiGenerationService {
 
 
 
-    private void finalizeChats(String userMessage, ChatSession chatSession, String fullText, Long duration, Usage usage) {
+//    private void finalizeChats(String userMessage, ChatSession chatSession, String fullText, Long duration, Usage usage, Long userId) {
+//        Long projectId = chatSession.getProject().getId();
+//
+//        if(usage != null) {
+//            int totalTokens = usage.getTotalTokens();
+//            usageService.recordTokenUsage(chatSession.getUser().getId(), totalTokens);
+//        }
+//
+//        // Save the User message
+//        chatMessageRepository.save(
+//                ChatMessage.builder()
+//                        .chatSession(chatSession)
+//                        .role(MessageRole.USER)
+//                        .content(userMessage)
+//                        .tokensUsed(usage.getPromptTokens())
+//                        .build()
+//        );
+//
+//        ChatMessage assistantChatMessage = ChatMessage.builder()
+//                .role(MessageRole.ASSISTANT)
+//                .content("Assistant Message here...")
+//                .chatSession(chatSession)
+//                .tokensUsed(usage.getCompletionTokens())
+//                .build();
+//
+//        assistantChatMessage = chatMessageRepository.save(assistantChatMessage);
+//
+//        List<ChatEvent> chatEventList = llmResponseParser.parseChatEvents(fullText, assistantChatMessage);
+//        chatEventList.addFirst(ChatEvent.builder()
+//                .type(ChatEventType.THOUGHT)
+//                .chatMessage(assistantChatMessage)
+//                .content("Thought for "+duration+"s")
+//                .sequenceOrder(0)
+//                .build());
+//
+//        chatEventList.stream()
+//                .filter(e -> e.getType() == ChatEventType.FILE_EDIT)
+//                .forEach(e -> projectFileService.saveFile(projectId, e.getFilePath(), e.getContent()));
+//
+//        chatEventRepository.saveAll(chatEventList);
+//    }
+    private void finalizeChats(String userMessage, ChatSession chatSession, String fullText, Long duration, Usage usage,Long userId) {
         Long projectId = chatSession.getProject().getId();
 
-        if(usage != null) {
-            int totalTokens = usage.getTotalTokens();
+        // 1. Safely extract tokens with fallbacks (0 if null)
+        int totalTokens = usage != null && usage.getTotalTokens() != null ? usage.getTotalTokens() : 0;
+        int promptTokens = usage != null && usage.getPromptTokens() != null ? usage.getPromptTokens() : 0;
+        int completionTokens = usage != null && usage.getCompletionTokens() != null ? usage.getCompletionTokens() : 0;
+
+        if(totalTokens > 0) {
             usageService.recordTokenUsage(chatSession.getUser().getId(), totalTokens);
         }
 
-        // Save the User message
+        // Save the User message (Using the safe promptTokens variable)
         chatMessageRepository.save(
                 ChatMessage.builder()
                         .chatSession(chatSession)
                         .role(MessageRole.USER)
                         .content(userMessage)
-                        .tokensUsed(usage.getPromptTokens())
+                        .tokensUsed(promptTokens) // ✅ SAFE
                         .build()
         );
 
@@ -201,7 +247,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
                 .role(MessageRole.ASSISTANT)
                 .content("Assistant Message here...")
                 .chatSession(chatSession)
-                .tokensUsed(usage.getCompletionTokens())
+                .tokensUsed(completionTokens) // ✅ SAFE
                 .build();
 
         assistantChatMessage = chatMessageRepository.save(assistantChatMessage);
@@ -210,7 +256,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
         chatEventList.addFirst(ChatEvent.builder()
                 .type(ChatEventType.THOUGHT)
                 .chatMessage(assistantChatMessage)
-                .content("Thought for "+duration+"s")
+                .content("Thought for " + duration + "s")
                 .sequenceOrder(0)
                 .build());
 

@@ -18,15 +18,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class UsageController {
     UsageService usageService;
 
-    @GetMapping("/today")
-    public ResponseEntity<UsageTodayResponse> getTodayUsage() {
-        Long userId = 1L;
-        return ResponseEntity.ok(usageService.getTodayUsageOfUser(userId));
-    }
-
-    @GetMapping("/limits")
-    public ResponseEntity<PlanLimitResponse> getPlanLimits() {
-        Long userId = 1L;
-        return ResponseEntity.ok(usageService.getCurrentSubscriptionLimitsOfUser(userId));
-    }
+//    @GetMapping("/today")
+//    public ResponseEntity<UsageTodayResponse> getTodayUsage() {
+//        Long userId = 1L;
+//        return ResponseEntity.ok(usageService.getTodayUsageOfUser(userId));
+//    }
+//
+//    @GetMapping("/limits")
+//    public ResponseEntity<PlanLimitResponse> getPlanLimits() {
+//        Long userId = 1L;
+//        return ResponseEntity.ok(usageService.getCurrentSubscriptionLimitsOfUser(userId));
+//    }
 }
