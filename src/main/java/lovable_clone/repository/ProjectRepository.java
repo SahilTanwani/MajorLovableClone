@@ -22,7 +22,7 @@ public interface ProjectRepository extends JpaRepository<Project,Long> {
             ORDER BY p.updatedAt DESC
             """)
 
-    List<Project> findAllAccessibleByUser(@Param("userId") Long userId);
+    List<ProjectWithRole> findAllAccessibleByUser(@Param("userId") Long userId);
 
     @Query("""
             SELECT p FROM Project p
