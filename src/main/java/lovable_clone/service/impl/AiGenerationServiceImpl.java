@@ -162,7 +162,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
 
                         try {
                             long duration = (endTime.get() - startTime.get()) /  1000;
-                            finalizeChats(userMessage, chatSession, fullResponseBuffer.toString(), duration, usageRef.get(),userId);
+                            finalizeChats(userMessage, chatSession, fullResponseBuffer.toString(), duration, usageRef.get());
                         } finally {
                             // 3. Always clean up the context to prevent memory leaks in thread pools
                             org.springframework.security.core.context.SecurityContextHolder.clearContext();
@@ -221,7 +221,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
 //
 //        chatEventRepository.saveAll(chatEventList);
 //    }
-    private void finalizeChats(String userMessage, ChatSession chatSession, String fullText, Long duration, Usage usage,Long userId) {
+    private void finalizeChats(String userMessage, ChatSession chatSession, String fullText, Long duration, Usage usage) {
         Long projectId = chatSession.getProject().getId();
 
         // 1. Safely extract tokens with fallbacks (0 if null)
