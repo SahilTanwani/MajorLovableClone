@@ -5,10 +5,12 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lovable_clone.dto.deploy.DeployResponse;
 import lovable_clone.dto.project.ProjectRequest;
 import lovable_clone.dto.project.ProjectResponse;
 import lovable_clone.dto.project.ProjectSummaryResponse;
 import lovable_clone.security.AuthUtil;
+import lovable_clone.service.DeploymentService;
 import lovable_clone.service.ProjectService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,7 @@ import java.util.List;
 public class ProjectController {
 
     ProjectService projectService;
+    DeploymentService deploymentService;
 
 
     @GetMapping()
@@ -49,5 +52,10 @@ public class ProjectController {
     public ResponseEntity<Void> deleteProject(@PathVariable Long id){
         projectService.softDelete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/deploy")
+    public ResponseEntity<DeployResponse> deployProject(@PathVariable Long id) {
+        return ResponseEntity.ok(deploymentService.deploy(id));
     }
 }
