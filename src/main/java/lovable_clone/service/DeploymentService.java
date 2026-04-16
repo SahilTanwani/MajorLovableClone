@@ -7,5 +7,5 @@ import lovable_clone.dto.deploy.DeployResponse;
 
 public interface DeploymentService {
 
-//    DeployResponse deploy(Long projectId);
+    DeployResponse deploy(Long projectId);
 }
