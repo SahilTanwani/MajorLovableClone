@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: isolate-project-pods
-  namespace: shuttle-apps
+  namespace: lovable-apps
 spec:
   podSelector:
     matchLabels:
@@ -17,7 +17,7 @@ spec:
         # ALLOW: The Shuttle Proxy (in the same namespace)
         - podSelector:
             matchLabels:
-              app: shuttle-proxy
+              app: lovable-proxy
       ports:
         - protocol: TCP
           port: 5173
