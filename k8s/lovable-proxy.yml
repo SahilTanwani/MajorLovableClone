@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: lovable-proxy
-  namespace: lovable-apps
+  namespace: lovable
 spec:
   replicas: 1
   selector:
@@ -24,7 +24,7 @@ spec:
           env:
             - name: REDIS_URL
               # Refers to the service in the same namespace
-              value: "redis://redis-service.lovable.svc.cluster.local:6379"
+              value: "redis://redis-service:6379"
           ports:
             - containerPort: 80
 
@@ -34,7 +34,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: lovable-proxy-svc
-  namespace: lovable-apps
+  namespace: lovable
 spec:
   type: LoadBalancer
   ports:
