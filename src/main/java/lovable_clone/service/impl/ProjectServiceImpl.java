@@ -98,7 +98,7 @@ public class ProjectServiceImpl implements ProjectService {
 
 
     @Override
-    @PreAuthorize("security.canEditProject(#projectId)")
+    @PreAuthorize("@security.canEditProject(#projectId)")
     public ProjectResponse updateProject(Long id, ProjectRequest request) {
         Long userId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(id,userId);
@@ -109,7 +109,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    @PreAuthorize("security.canDeleteProject(#projectId)")
+    @PreAuthorize("@security.canDeleteProject(#projectId)")
     public void softDelete(Long projectId) {
         Long userId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(projectId,userId);
