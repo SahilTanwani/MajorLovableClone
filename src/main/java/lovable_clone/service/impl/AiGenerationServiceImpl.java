@@ -48,64 +48,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
     private static final Pattern FILE_TAG_PATTERN = Pattern.compile("<file path=\"([^\"]+)\">(.*?)</file>", Pattern.DOTALL);
 
 
-//    @Override
-//    @PreAuthorize("@security.canEditProject(#projectId)")
-//    public Flux<StreamResponse> streamResponse(String userMessage, Long projectId) {
-//
-////        usageService.checkDailyTokensUsage();
-//
-//        Long userId = authUtil.getCurrentUserId();
-//        ChatSession chatSession = createChatSessionIfNotExists(projectId, userId);
-//
-//        Map<String, Object> advisorParams = Map.of(
-//                "userId", userId,
-//                "projectId", projectId
-//        );
-//
-//        StringBuilder fullResponseBuffer = new StringBuilder();
-//        CodeGenerationTools codeGenerationTools = new CodeGenerationTools(projectFileService, projectId);
-//
-//        AtomicReference<Long> startTime = new AtomicReference<>(System.currentTimeMillis());
-//        AtomicReference<Long> endTime = new AtomicReference<>(0L);
-//        AtomicReference<Usage> usageRef = new AtomicReference<>();
-//
-//        return chatClient.prompt()
-//                .system(PromptUtils.CODE_GENERATION_SYSTEM_PROMPT)
-//                .user(userMessage)
-//                .tools(codeGenerationTools)
-//                .advisors(advisorSpec -> {
-//                            advisorSpec.params(advisorParams);
-//                            advisorSpec.advisors(fileTreeContextAdvisor);
-//                        }
-//                )
-//                .stream()
-//                .chatResponse()
-//                .doOnNext(response -> {
-//                    String content = response.getResult().getOutput().getText();
-//
-//                    if(content != null && !content.isEmpty() && endTime.get() == 0) { // first non-empty chunk received
-//                        endTime.set(System.currentTimeMillis());
-//                    }
-//
-//                    if(response.getMetadata().getUsage() != null) {
-//                        usageRef.set(response.getMetadata().getUsage());
-//                    }
-//                    fullResponseBuffer.append(content);
-//                })
-//                .doOnComplete(() -> {
-//                    Schedulers.boundedElastic().schedule(() -> {
-////                        parseAndSaveFiles(fullResponseBuffer.toString(), projectId);
-//
-//                        long duration = (endTime.get() - startTime.get()) /  1000;
-//                        finalizeChats(userMessage, chatSession, fullResponseBuffer.toString(), duration, usageRef.get());
-//                    });
-//                })
-//                .doOnError(error -> log.error("Error during streaming for projectId: {}", projectId))
-//                .map(response -> {
-//                    String text = response.getResult().getOutput().getText();
-//                    return new StreamResponse(text != null ? text : "");
-//                });
-//    }
+
     @Override
     @PreAuthorize("@security.canEditProject(#projectId)")
     public Flux<StreamResponse> streamResponse(String userMessage, Long projectId) {
@@ -180,47 +123,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
 
 
 
-//    private void finalizeChats(String userMessage, ChatSession chatSession, String fullText, Long duration, Usage usage, Long userId) {
-//        Long projectId = chatSession.getProject().getId();
-//
-//        if(usage != null) {
-//            int totalTokens = usage.getTotalTokens();
-//            usageService.recordTokenUsage(chatSession.getUser().getId(), totalTokens);
-//        }
-//
-//        // Save the User message
-//        chatMessageRepository.save(
-//                ChatMessage.builder()
-//                        .chatSession(chatSession)
-//                        .role(MessageRole.USER)
-//                        .content(userMessage)
-//                        .tokensUsed(usage.getPromptTokens())
-//                        .build()
-//        );
-//
-//        ChatMessage assistantChatMessage = ChatMessage.builder()
-//                .role(MessageRole.ASSISTANT)
-//                .content("Assistant Message here...")
-//                .chatSession(chatSession)
-//                .tokensUsed(usage.getCompletionTokens())
-//                .build();
-//
-//        assistantChatMessage = chatMessageRepository.save(assistantChatMessage);
-//
-//        List<ChatEvent> chatEventList = llmResponseParser.parseChatEvents(fullText, assistantChatMessage);
-//        chatEventList.addFirst(ChatEvent.builder()
-//                .type(ChatEventType.THOUGHT)
-//                .chatMessage(assistantChatMessage)
-//                .content("Thought for "+duration+"s")
-//                .sequenceOrder(0)
-//                .build());
-//
-//        chatEventList.stream()
-//                .filter(e -> e.getType() == ChatEventType.FILE_EDIT)
-//                .forEach(e -> projectFileService.saveFile(projectId, e.getFilePath(), e.getContent()));
-//
-//        chatEventRepository.saveAll(chatEventList);
-//    }
+
     private void finalizeChats(String userMessage, ChatSession chatSession, String fullText, Long duration, Usage usage) {
         Long projectId = chatSession.getProject().getId();
 
