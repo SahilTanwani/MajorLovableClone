@@ -54,6 +54,334 @@ A full-stack platform that revolutionizes web application development by providi
 - **Boilerplate**: Lombok
 - **Build**: Maven Wrapper (mvnw, mvnw.cmd)
 
+## 🏛️ Architecture Overview
+
+### System Architecture
+
+The Lovable Clone platform consists of multiple interconnected services:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        USER LAYER                               │
+│  ┌──────────────┐        ┌──────────────┐                       │
+│  │ Browser      │        │ NGINX Ingress│                       │
+│  └──────────────┘        └──────────────┘                       │
+└──────────────────┬────────────────────────────────────────────┬─┘
+                   │                                            │
+        ┌──────────▼─────────────┐            ┌────────────────▼──┐
+        │   FRONTEND SERVICE     │            │  PROXY SERVICE    │
+        │  (React + Vite)        │            │  (Node.js)        │
+        │  - Monaco Editor       │            │  - Subdomain      │
+        │  - Project UI          │            │    Routing        │
+        │  - Chat Interface      │            │  - Cache Layer    │
+        └──────────┬─────────────┘            └────────────────┬──┘
+                   │                                            │
+                   └────────────────────┬─────────────────────┘
+                                        │
+        ┌───────────────────────────────▼───────────────────────────┐
+        │         SPRING BOOT GATEWAY SERVICE                       │
+        │  (Main Backend - Port 8080)                               │
+        └─────┬─────────────┬──────────────┬───────────────────┬───┘
+              │             │              │                   │
+        ┌─────▼──┐  ┌──────▼────┐  ┌──────▼──┐      ┌────────▼────────┐
+        │ Account │  │ Workspace │  │ Storage │      │ Intelligence    │
+        │ Service │  │ Service   │  │ Service │      │ Service (LLM)   │
+        └─────┬──┘  └──────┬────┘  └──────┬──┘      └────────┬────────┘
+              │           │              │                   │
+        ┌─────▼─────────────▼──────────────▼──────────────────▼────────┐
+        │                    DATA LAYER                                │
+        │  ┌────────────┐  ┌──────────────┐  ┌──────────────────────┐ │
+        │  │ PostgreSQL │  │ Redis Cache  │  │ MinIO Object Storage │ │
+        │  │ + pgVector │  │              │  │                      │ │
+        │  └────────────┘  └──────────────┘  └──────────────────────┘ │
+        └─────────────────────────────────────────────────────────────┘
+```
+
+#### Service Components
+
+1. **Frontend Service**
+   - React 19.1.0 application with Vite
+   - Monaco Editor for code editing
+   - Real-time project management UI
+   - AI chat interface for prompts
+
+2. **Proxy Service**
+   - Node.js reverse proxy
+   - Subdomain routing (*.app.domain.com)
+   - Cache layer for improved performance
+   - Preview service routing
+
+3. **Spring Boot Backend**
+   - Account & Authentication Service
+   - Workspace/Project Management Service
+   - File Storage & Management Service
+   - Intelligence Service (LLM Integration)
+
+4. **Data Layer**
+   - **PostgreSQL**: Relational database with pgVector for semantic search
+   - **Redis**: In-memory caching for performance
+   - **MinIO**: S3-compatible object storage for files
+
+---
+
+### Database Schema
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    CORE ENTITIES                                 │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  USER                                  PROJECT                  │
+│  ├─ bigint id (PK)                     ├─ bigint id (PK)        │
+│  ├─ string email (UK)                  ├─ string name           │
+│  ├─ string password_hash                ├─ bigint owner_id (FK) │
+│  ├─ string name                         ├─ bool is_public       │
+│  ├─ string avatar_url                   ├─ timestamps           │
+│  └─ timestamps                          └─ one active subscription
+│          │                                     │
+│          │ owns                               │ has members
+│          │ triggers                           │ contains files
+│          ▼                                    ▼
+│  ┌────────────────────────────────────────────────────────┐   │
+│  │ PROJECT_OWNERSHIP  │  PROJECT_MEMBER   │  PROJECT_FILE │   │
+│  ├────────────────────┼──────────────────┼───────────────┤   │
+│  │ bigint project_id  │ project_id (FK)  │ project_id    │   │
+│  │ bigint user_id     │ user_id (FK)     │ string path   │   │
+│  │ timestamps         │ role: EDITOR     │ string minio  │   │
+│  └────────────────────┴──────────────────┴───────────────┘   │
+│          │                                                     │
+│          │ tracks                                              │
+│          ▼                                                     │
+│  USAGE_LOG                    SUBSCRIPTION    PLAN             │
+│  ├─ user_id (FK)              ├─ id           ├─ id           │
+│  ├─ project_id (FK)           ├─ user_id      ├─ name         │
+│  ├─ tokens_used               ├─ plan_id      ├─ stripe_price │
+│  ├─ action (enum)             ├─ status       ├─ max_projects │
+│  ├─ metadata (JSON)           ├─ current_     ├─ max_tokens   │
+│  └─ timestamps                │   period_start ├─ max_previews │
+│                               └─ timestamps   └─ active: bool  │
+│
+│  CHAT_SESSION                              CHAT_MESSAGE
+│  ├─ project_id (FK)                        ├─ session_id (FK)
+│  ├─ user_id (FK)                           ├─ role: USER/ASSISTANT
+│  ├─ namespace (string)                     ├─ content (text)
+│  └─ timestamps                             ├─ tokens_used
+│                                            └─ timestamps
+│
+│  PREVIEW                                   CHAT_EVENT
+│  ├─ project_id (FK)                        ├─ message_id (FK)
+│  ├─ pool_name (string)                     ├─ type: THOUGHT/
+│  ├─ preview_url                            │  FILE_EDIT/MESSAGE
+│  ├─ status                                 ├─ content
+│  └─ timestamps                             ├─ file_path
+│                                            ├─ sequence_order
+│                                            └─ timestamps
+│
+└──────────────────────────────────────────────────────────────────┘
+
+KEY RELATIONSHIPS:
+• User → owns → Project (1:many)
+• User → has → Subscription (1:1 or 1:many)
+• Project → has → ProjectMember (1:many, RBAC)
+• Project → has → ProjectFile (1:many)
+• Project → has → ChatSession (1:many)
+• ChatSession → has → ChatMessage (1:many)
+• ChatMessage → generates → ChatEvent (1:many)
+• User → tracks → UsageLog (1:many)
+```
+
+---
+
+### LLM Integration Flow
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  REACT FRONTEND                                              │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  User Input (Natural Language Prompt)                │  │
+│  │  Example: "Create a login form with validation"     │  │
+│  └────────────────┬──────────────────────────────────────┘  │
+└─────────────────┼──────────────────────────────────────────┘
+                  │ POST /api/chat/stream
+                  ▼
+┌──────────────────────────────────────────────────────────────┐
+│  SPRING BOOT BACKEND                                         │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │ 1. Parse User Prompt & Validate Request              │  │
+│  │    - Check JWT token                                 │  │
+│  │    - Verify project access                           │  │
+│  │    - Check token usage limits                        │  │
+│  └────────────────┬───────────────────────────────────────┘  │
+│  ┌────────────────▼───────────────────────────────────────┐  │
+│  │ 2. Build LLM Context                                  │  │
+│  │    ├─ Get file tree from MinIO                        │  │
+│  │    ├─ Read existing project files                     │  │
+│  │    ├─ Include system prompt (guidelines)             │  │
+│  │    └─ Add user message with context                 │  │
+│  └────────────────┬───────────────────────────────────────┘  │
+│  ┌────────────────▼───────────────────────────────────────┐  │
+│  │ 3. Call LLM API                                       │  │
+│  │    ├─ Provider: OpenRouter / OpenAI Compatible       │  │
+│  │    ├─ Model: GPT-4, GPT-OSS-120b                    │  │
+│  │    ├─ Config: Temperature 0.0, Max tokens 400       │  │
+│  │    └─ Stream: Yes (for real-time response)          │  │
+│  └────────────────┬───────────────────────────────────────┘  │
+│  ┌────────────────▼───────────────────────────────────────┐  │
+│  │ 4. Stream & Parse Response                            │  │
+│  │    ├─ Buffer streaming chunks                         │  │
+│  │    ├─ Parse response into events:                    │  │
+│  │    │  ├─ <message>Text output</message>             │  │
+│  │    │  ├─ <file path="src/App.tsx">code</file>       │  │
+│  │    │  └─ <thought>reasoning</thought>               │  │
+│  │    └─ Keep track of token usage                      │  │
+│  └────────────────┬───────────────────────────────────────┘  │
+│  ┌────────────────▼───────────────────────────────────────┐  │
+│  │ 5. Save to Database & Storage                         │  │
+│  │    ├─ Chat messages → PostgreSQL                      │  │
+│  │    ├─ Generated files → MinIO storage                │  │
+│  │    ├─ Chat events → PostgreSQL (thoughts/actions)   │  │
+│  │    └─ Usage log → Record tokens consumed            │  │
+│  └────────────────┬───────────────────────────────────────┘  │
+└─────────────────┼──────────────────────────────────────────┘
+                  │ SSE Stream: Server-Sent Events
+                  ▼
+┌──────────────────────────────────────────────────────────────┐
+│  REACT FRONTEND                                              │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │ Display Results:                                       │  │
+│  │ ├─ Show streamed response in real-time               │  │
+│  │ ├─ Update file tree with generated files             │  │
+│  │ ├─ Display suggested code changes                    │  │
+│  │ ├─ Show chat history                                 │  │
+│  │ └─ Update usage statistics                           │  │
+│  └────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
+
+CIRCUIT BREAKER PATTERN:
+• Detects LLM API failures
+• Prevents cascading failures
+• Automatically retries
+• Falls back to cached responses when available
+```
+
+---
+
+### Code Execution System Architecture
+
+```
+PROJECT DEPLOYMENT FLOW:
+┌─────────────────────────────────────────────────────────────┐
+│  FRONTEND (User clicks "Deploy")                           │
+│  http://project-36.app.domain.com                          │
+│  Reverse proxy → Redis cache check → app.domain.com        │
+└──────────────┬────────────────────────────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────────────────────────────┐
+│  SPRING BOOT BACKEND                                        │
+│  /deploy/36                                                 │
+│  ├─ Fetch project files from MinIO                        │
+│  ├─ Prepare build context                                 │
+│  └─ Send to Kubernetes Runner                             │
+└──────────────┬────────────────────────────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────────────────────────────┐
+│  KUBERNETES CLUSTER (Code Execution)                       │
+│  Fabric8 Kubernetes client manages deployment              │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐  │
+│  │ POD 1 (Project-36)                                  │  │
+│  │ ├─ Syncer                                           │  │
+│  │ │  └─ Fetches files from MinIO                     │  │
+│  │ ├─ npm install                                     │  │
+│  │ ├─ npm run dev                                     │  │
+│  │ │  └─ Starts dev server on internal IP             │  │
+│  │ └─ Exposes on :5173 internally                     │  │
+│  └─────────────────────────────────────────────────────┘  │
+│                                                             │
+│  Network Policy: "Don't allow pods to talk to each other" │
+│  └─ Prevents interference between project deployments    │
+│                                                             │
+│  ┌──────────────────┐  ┌──────────────────┐               │
+│  │ POD 2            │  │ POD 36           │               │
+│  │ (Project-37)     │  │ (Project-36)     │               │
+│  │ 192.244.1.14     │  │ 192.244.1.12     │               │
+│  │ :5173            │  │ :5173            │               │
+│  └──────────────────┘  └──────────────────┘               │
+│                                                             │
+│  Kubernetes DNS resolves:                                 │
+│  project-36.app.domain.com → Pod 36 (:5173)             │
+│  project-37.app.domain.com → Pod 37 (:5173)             │
+└─────────────────────────────────────────────────────────────┘
+
+BUILD PROCESS IN POD:
+├─ Fetch code files from MinIO
+├─ npm install (dependencies)
+├─ npm run dev (Hot Module Reload enabled)
+├─ Server listens on 0.0.0.0:5173
+└─ Ready for traffic via subdomain routing
+```
+
+---
+
+### Request Flow Diagram
+
+```
+1. USER MAKES PROMPT REQUEST
+   ┌──────────────────────────────────┐
+   │ Browser sends prompt to backend  │
+   │ POST /api/chat/stream            │
+   └────────────────┬─────────────────┘
+                    │
+2. CONTEXT PREPARATION
+   ┌────────────────▼──────────────────────────────┐
+   │ FileTreeContextAdvisor:                       │
+   │ ├─ Fetches file tree from MinIO              │
+   │ ├─ Reads file contents                        │
+   │ ├─ Prepares context for LLM                   │
+   │ └─ Checks circuit breaker status             │
+   └────────────────┬──────────────────────────────┘
+                    │
+3. LLM STREAMING
+   ┌────────────────▼──────────────────────────────┐
+   │ ChatClient.stream() via Spring AI:           │
+   │ ├─ System prompt (code generation guidelines)│
+   │ ├─ User message + context                     │
+   │ ├─ Tools available (file operations)         │
+   │ └─ Streams response in real-time             │
+   └────────────────┬──────────────────────────────┘
+                    │
+4. RESPONSE PARSING
+   ┌────────────────▼──────────────────────────────┐
+   │ LlmResponseParser:                            │
+   │ ├─ Parse <message> tags                       │
+   │ ├─ Extract <file path="">code</file>         │
+   │ ├─ Parse thoughts/reasoning                   │
+   │ └─ Create ChatEvents for each action         │
+   └────────────────┬──────────────────────────────┘
+                    │
+5. DATA PERSISTENCE
+   ┌────────────────▼──────────────────────────────┐
+   │ Save Results:                                 │
+   │ ├─ ChatMessage (user & assistant) in DB      │
+   │ ├─ ProjectFiles (generated code) in MinIO    │
+   │ ├─ ChatEvents (actions performed) in DB      │
+   │ ├─ UsageLog (token tracking) in DB           │
+   │ └─ Redis cache update                         │
+   └────────────────┬──────────────────────────────┘
+                    │
+6. RESPONSE TO FRONTEND
+   ┌────────────────▼──────────────────────────────┐
+   │ Stream events back via SSE:                  │
+   │ ├─ Real-time response chunks                 │
+   │ ├─ File creation/update events               │
+   │ └─ Usage statistics                          │
+   └──────────────────────────────────────────────┘
+```
+
+---
+
 ## 📁 Project Structure
 
 ```text
