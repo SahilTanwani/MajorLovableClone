@@ -5,8 +5,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:9010/pgvector-test?options=-c%20timezone=Asia/Kolkata
-    username: user
-    password: password
+    username: ${DB_USERNAME:user}
+    password: ${DB_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -20,12 +20,12 @@ spring:
 
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
   ai:
     openai:
-      api-key: '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'
+      api-key: ${OPENAI_API_KEY:your_api_key_here}
       base-url: https://openrouter.ai/api
       chat:
         options:
@@ -34,13 +34,13 @@ spring:
           max-tokens: 400
 
 jwt:
-  secret-key: jhsfd45646jhhsdu8554gygfvdasg46544454
+  secret-key: ${JWT_SECRET_KEY:your_jwt_secret_key_here}
 
 stripe:
   api:
-    secret: \${STRIPE_API_SECRET:sk_test_placeholder}
+    secret: ${STRIPE_API_SECRET:sk_test_placeholder}
   webhook:
-    secret: \${STRIPE_WEBHOOK_SECRET:whsec_placeholder}
+    secret: ${STRIPE_WEBHOOK_SECRET:whsec_placeholder}
 
 client.url: http://localhost:8080
 
@@ -51,7 +51,8 @@ logging:
       chat.client: DEBUG
 
 minio:
-  url: http://localhost:9000
-  access-key: minioadmin
-  secret-key: minioadmin123
+  url: ${MINIO_URL:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin123}
   project-bucket: projects
+

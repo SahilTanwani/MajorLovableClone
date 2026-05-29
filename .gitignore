@@ -31,3 +31,17 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Sensitive Configuration Files ###
+application.yaml
+application-*.yaml
+application.properties
+application-*.properties
+.env
+.env.local
+.env.*.local
+
+### IDE ###
+.DS_Store
+*.log
+
