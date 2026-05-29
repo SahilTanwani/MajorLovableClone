@@ -1,6 +1,12 @@
-# 🚀 Lovable Clone - Full Stack AI-Powered Web App Builder
+# 🚀 PromptToApp - Full Stack AI-Powered Web App Builder
 
 A full-stack platform that revolutionizes web application development by providing AI-powered code generation and real-time collaboration features. Build web applications with intelligent assistance!
+
+> **PromptToApp** consists of two main repositories:
+> - **Backend**: [PromptToAppBackend](https://github.com/SahilTanwani/PromptToAppBackend) (This Repository) - Spring Boot API
+> - **Frontend**: [PromptToAppFrontend](https://github.com/SahilTanwani/PromptToAppFrontend) - React + Vite UI
+>
+> Make sure to clone and set up both repositories for the complete application!
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-21+-orange.svg)](https://www.oracle.com/java)
@@ -56,9 +62,9 @@ A full-stack platform that revolutionizes web application development by providi
 
 ## 🏛️ Architecture Overview
 
-### System Architecture
+## 🏛️ Architecture Overview
 
-The Lovable Clone platform consists of multiple interconnected services:
+The PromptToApp platform consists of multiple interconnected services:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -385,43 +391,66 @@ BUILD PROCESS IN POD:
 ## 📁 Project Structure
 
 ```text
-lovable-clone/
-├── src/
-│   ├── main/
-│   │   ├── java/lovable_clone/
-│   │   │   ├── config/           # Spring configurations (AI, Security, Payment, Storage)
-│   │   │   ├── controller/       # REST API endpoints
-│   │   │   ├── dto/              # Data Transfer Objects
-│   │   │   ├── entity/           # JPA entities
-│   │   │   ├── enums/            # Enum definitions
-│   │   │   ├── error/            # Error handling & exceptions
-│   │   │   ├── llm/              # LLM integration & tools
-│   │   │   ├── mapper/           # MapStruct mappers
-│   │   │   ├── repository/       # Spring Data repositories
-│   │   │   ├── security/         # JWT filter & Security config
-│   │   │   └── service/          # Business logic services
-│   │   ├── resources/
-│   │   │   ├── application.yaml.example  # Configuration template
-│   │   │   └── static/
-│   │   └── templates/
-│   └── test/java/lovable_clone/
-│       └── LovableCloneApplicationTests.java
-├── proxy/                        # Node.js proxy service
-│   ├── index.js
-│   └── package.json
-├── k8s/                          # Kubernetes manifests
-│   ├── infra.yml
-│   ├── lovable-proxy.yml
-│   ├── policy.yml
-│   └── runner-pods.yml
-├── services.docker-compose.yml   # Local services (PostgreSQL, MinIO)
-├── pom.xml                       # Maven configuration
-├── mvnw & mvnw.cmd              # Maven Wrapper
-├── SECURITY_GUIDE.md            # Security best practices
-└── README.md                    # This file
+PromptToApp/
+├── Backend Repository (This Repository)
+│   └── https://github.com/SahilTanwani/PromptToAppBackend
+│
+├── Frontend Repository
+│   └── https://github.com/SahilTanwani/PromptToAppFrontend
+│
+└── Backend Project Structure:
+    ├── src/
+    │   ├── main/
+    │   │   ├── java/lovable_clone/
+    │   │   │   ├── config/           # Spring configurations (AI, Security, Payment, Storage)
+    │   │   │   ├── controller/       # REST API endpoints
+    │   │   │   ├── dto/              # Data Transfer Objects
+    │   │   │   ├── entity/           # JPA entities
+    │   │   │   ├── enums/            # Enum definitions
+    │   │   │   ├── error/            # Error handling & exceptions
+    │   │   │   ├── llm/              # LLM integration & tools
+    │   │   │   ├── mapper/           # MapStruct mappers
+    │   │   │   ├── repository/       # Spring Data repositories
+    │   │   │   ├── security/         # JWT filter & Security config
+    │   │   │   └── service/          # Business logic services
+    │   │   ├── resources/
+    │   │   │   ├── application.yaml.example  # Configuration template
+    │   │   │   └── static/
+    │   │   └── templates/
+    │   └── test/java/lovable_clone/
+    │       └── LovableCloneApplicationTests.java
+    ├── proxy/                        # Node.js proxy service
+    │   ├── index.js
+    │   └── package.json
+    ├── k8s/                          # Kubernetes manifests
+    │   ├── infra.yml
+    │   ├── lovable-proxy.yml
+    │   ├── policy.yml
+    │   └── runner-pods.yml
+    ├── services.docker-compose.yml   # Local services (PostgreSQL, MinIO)
+    ├── pom.xml                       # Maven configuration
+    ├── mvnw & mvnw.cmd              # Maven Wrapper
+    ├── SECURITY_GUIDE.md            # Security best practices
+    └── README.md                    # This file
 ```
 
+---
+
+## 🔗 Project Repositories
+
+This is a full-stack application with separate repositories for backend and frontend:
+
+| Component | Repository | Tech Stack |
+|-----------|-----------|-----------|
+| **Backend** | [PromptToAppBackend](https://github.com/SahilTanwani/PromptToAppBackend) | Java 21, Spring Boot 4.0, PostgreSQL |
+| **Frontend** | [PromptToAppFrontend](https://github.com/SahilTanwani/PromptToAppFrontend) | React 19, Vite, Tailwind CSS |
+
+**For Frontend Setup Instructions**: See [PromptToAppFrontend Repository](https://github.com/SahilTanwani/PromptToAppFrontend)
+
 ## 🚀 Getting Started
+
+> 📌 **Full Stack Setup**: This is the **backend** repository. Don't forget to also set up the **frontend**!
+> - Frontend Setup: [PromptToAppFrontend](https://github.com/SahilTanwani/PromptToAppFrontend)
 
 ### Prerequisites
 - **Java 21+** with JDK
@@ -705,9 +734,10 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 🔗 Quick Links
 
-- [GitHub Repository](https://github.com/SahilTanwani/MajorLovableClone)
-- [Issues & Bugs](https://github.com/SahilTanwani/MajorLovableClone/issues)
-- [Discussions](https://github.com/SahilTanwani/MajorLovableClone/discussions)
+- [Backend Repository](https://github.com/SahilTanwani/PromptToAppBackend)
+- [Frontend Repository](https://github.com/SahilTanwani/PromptToAppFrontend)
+- [Issues & Bugs](https://github.com/SahilTanwani/PromptToAppBackend/issues)
+- [Discussions](https://github.com/SahilTanwani/PromptToAppBackend/discussions)
 
 ## 📧 Support
 
